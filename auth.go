@@ -33,14 +33,38 @@ func authorize() {
     get_consumer_key(&config)
   }
 
-  _, authorized, err := get_access_token(&config)
+  _, err = request_access_token(&config)
 
-  if authorized {
+  if err == nil {
     save_config(&config)
   }
 
   fmt.Println(`
     You are authorized. Enjoy Prism.
+  `)
+}
+
+func force_authorize() {
+  fmt.Println(`
+    You have decided to force re-authorization.
+    Your previous token will be invalidated.
+  `)
+
+  config := Config{}
+
+  get_consumer_key(&config)
+
+  _, err := request_access_token(&config)
+
+  if err == nil {
+    save_config(&config)
+  }
+}
+
+func require_authorize() {
+  fmt.Println(`
+    Unfortunately, your access key has been invalidated.
+    Re-authorization is required.
   `)
 }
 
@@ -52,37 +76,23 @@ func get_consumer_key(config *Config) {
   }
 }
 
-func get_access_token(config *Config) (*oauth.Credentials, bool, error) {
-
+func request_access_token(config *Config) (*oauth.Credentials, error) {
   oauthClient.Credentials.Token = config.ConsumerKey
   oauthClient.Credentials.Secret = config.ConsumerSecret
 
-  authorized := false
+  request_token, err := oauthClient.RequestTemporaryCredentials(http.DefaultClient, "", nil)
 
-  var token *oauth.Credentials
-
-  if config.AccessToken != "" && config.AccessSecret != "" {
-
-    authorized = true
-    token = &oauth.Credentials{config.AccessToken, config.AccessSecret}
-
-  } else {
-
-    request_token, err := oauthClient.RequestTemporaryCredentials(http.DefaultClient, "", nil)
-
-    if err != nil {
-      fmt.Println("failed to request temporary credentials: ", err)
-			return nil, false, err
-    }
-
-    token := client_authentication(request_token)
-
-    config.AccessToken = token.Token
-    config.AccessSecret = token.Secret
-    authorized = true
+  if err != nil {
+    fmt.Println("failed to request temporary credentials: ", err)
+    return nil, err
   }
 
-  return token, authorized, nil
+  token := client_authentication(request_token)
+
+  config.AccessToken = token.Token
+  config.AccessSecret = token.Secret
+
+  return token, nil
 }
 
 func client_authentication(request_token *oauth.Credentials) *oauth.Credentials {
@@ -114,14 +124,14 @@ func client_authentication(request_token *oauth.Credentials) *oauth.Credentials 
   return token
 }
 
-func has_consumer(config *Config) {
+func has_consumer(config *Config) bool {
   return config.ConsumerKey != "" && config.ConsumerSecret != ""
 }
 
-func has_access(config *Config) {
+func has_access(config *Config) bool {
   return config.AccessToken != "" && config.AccessSecret != ""
 }
 
-func has_credentials(config *Config) {
-  return has_consumer(&config) && has_access(&config)
+func has_credentials(config *Config) bool {
+  return has_consumer(config) && has_access(config)
 }
