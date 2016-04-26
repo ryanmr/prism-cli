@@ -1,7 +1,7 @@
 package main
 
 import (
-  "fmt"
+  // "fmt"
   "os"
   // "net/http"
   // "encoding/json"
@@ -36,10 +36,17 @@ func handleArguments() {
       },
     },
     {
+      Name: "force-authorize",
+      Usage: "force authorize this app with Twitter",
+      Action: func(c *cli.Context) {
+        force_authorize()
+      },
+    },
+    {
       Name: "tweets",
       Usage: "show your tweets from your Twitter account",
       Action: func(c *cli.Context) {
-        
+
         show_tweets()
       },
     },
