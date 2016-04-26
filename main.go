@@ -35,32 +35,15 @@ func handleArguments() {
         authorize()
       },
     },
+    {
+      Name: "tweets",
+      Usage: "show your tweets from your Twitter account",
+      Action: func(c *cli.Context) {
+        
+        show_tweets()
+      },
+    },
   }
 
   app.Run(os.Args)
-}
-
-func authorize() {
-  fmt.Println(`
-    You will need to authorize this application with your Twitter account.
-    To do so, you will be presented a URL, which will take you to Twitter.
-    After you log into Twitter, you will be given a PIN.
-    Entering the PIN here will authroize this application.
-  `)
-
-  _, config, err := get_config()
-
-  if err != nil {
-    get_consumer_key(&config)
-  }
-
-  _, authorized, err := get_access_token(&config)
-
-  if authorized {
-    save_config(&config)
-  }
-
-  fmt.Println(`
-    You are authorized. Enjoy Prism.
-  `)
 }
